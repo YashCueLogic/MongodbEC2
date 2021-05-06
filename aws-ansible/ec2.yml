@@ -1,0 +1,131 @@
+- hosts: localhost
+  gather_facts: no
+  vars_files:
+  - cred.yml
+  tasks:
+  - name:
+    pip:
+      name: boto3
+      state: present
+
+  - name: Creating Security Group for WebServer on AWS
+    ec2_group:
+      name: WebSG
+      description: Security Group for Web Server allowing port for http and ssh
+      region: us-east-2
+      aws_access_key: "{{ access_key }}"
+      aws_secret_key: "{{ secret_key }}"
+      rules:
+      - proto: tcp
+        from_port: 27017
+        to_port: 27017
+        cidr_ip: 0.0.0.0/0
+      - proto: tcp
+        from_port: 22
+        to_port: 22
+        cidr_ip: 0.0.0.0/0
+      - proto: tcp
+        from_port: 80
+        to_port: 80
+        cidr_ip: 0.0.0.0/0
+      rules_egress:
+      - proto: all
+        cidr_ip: 0.0.0.0/0
+
+  - name: launching ec2 primary instance for webserver
+    ec2:
+      key_name: mongo
+      instance_type: t2.micro
+      instance_tags:
+          Name: mongo1
+      image: ami-03d64741867e7bb94
+      region: us-east-2
+      wait: yes
+      group: 
+         - WebSG
+      count: 1
+      vpc_subnet_id: subnet-aa92d9e6
+      assign_public_ip: yes
+      state: present
+      aws_access_key: "{{ access_key }}"
+      aws_secret_key: "{{ secret_key }}"
+    register: ec2
+
+  - name: launching ec2 secondary instance for webserver
+    ec2:
+      key_name: mongo
+      instance_type: t2.micro
+      instance_tags:
+          Name: mongo2
+      image: ami-03d64741867e7bb94
+      region: us-east-2
+      wait: yes
+      group:
+         - WebSG
+      count: 1
+      vpc_subnet_id: subnet-aa92d9e6
+      assign_public_ip: yes
+      state: present
+      aws_access_key: "{{ access_key }}"
+      aws_secret_key: "{{ secret_key }}"
+    register: ec2_2
+
+  - name: Add new instances to host group
+    add_host:
+      hostname: "{{ item.public_ip }}"
+      groupname: webserver
+    loop: "{{ ec2.instances }}"
+
+  - name: Add new instances to host group    
+    add_host:
+      hostname: "{{ item.public_ip }}"
+      groupname: webserver
+    loop: "{{ ec2_2.instances }}"
+
+  - name: Add new instances to secondary group
+    add_host:
+      hostname: "{{ item.public_ip }}"
+      groupname: secondary
+    loop: "{{ ec2_2.instances }}"
+
+  - name: Wait for SSH to come up for mongo1
+    wait_for:
+      host: "{{ item.public_dns_name }}"
+      port: 22
+      state: started
+    loop: "{{ ec2.instances }}"
+
+  - name: Wait for SSH to come up for mongo2
+    wait_for:
+      host: "{{ item.public_dns_name }}"
+      port: 22
+      state: started
+    loop: "{{ ec2_2.instances }}"
+
+- hosts: webserver
+  gather_facts: no
+  tasks:
+  - name: running httpdserver role
+    include_role:
+      name: httpdserver
+  
+- hosts: webserver
+  gather_facts: yes
+  tasks:
+  - name: installing mongo
+    include_role:  
+      name: mongoserver
+
+- hosts: webserver[0]
+  gather_facts: yes
+  tasks:
+  - name: setting up primary replica
+    include_role:
+      name: replica-set
+
+- hosts: secondary
+  gather_facts: yes
+  tasks:
+  - name: setting up secndary replicas
+    include_role:
+      name: replica-set-secondary

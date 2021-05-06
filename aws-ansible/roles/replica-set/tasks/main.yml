@@ -1,0 +1,22 @@
+---
+# tasks file for replica-set
+- name: Create file to initiate repica set
+  template:
+    src: replSetInit.j2
+    dest: ./replSetInit.js
+
+- name: Copy hosts file
+  template:
+    src: hosts.j2
+    dest: /etc/hosts
+
+- name: Initialize the replica set
+  command: mongo ./replSetInit.js
+
+- name: crate file to add secondary replicas
+  template:
+    src: rsadd.j2
+    dest: ./rsadd.js
+ 
+- name: add secondary replicas
+  command: mongo ./rsadd.js

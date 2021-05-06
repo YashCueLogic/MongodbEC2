@@ -1,0 +1,5 @@
+{% for host in groups['secondary'] %}
+rs.add("{{ hostvars[host]['ansible_hostname'] }}")
+{% endfor %}
+
+printjson(rs.status())

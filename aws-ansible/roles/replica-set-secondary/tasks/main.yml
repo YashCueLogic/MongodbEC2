@@ -1,0 +1,11 @@
+---
+# tasks file for replica-set-secondary
+# tasks file for replica-set
+- name: Create file to initiate repica set
+  template:
+    src: slave.j2
+    dest: ./slave.js
+
+- name: Initialize the replica slaves
+  command: mongo ./slave.js
+

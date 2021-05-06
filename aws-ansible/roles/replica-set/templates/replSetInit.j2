@@ -1,0 +1,7 @@
+rs.initiate()
+
+{% for host in groups['secondary'] %}
+rs.add("{{host}}")
+{% endfor %}
+
+printjson(rs.status())

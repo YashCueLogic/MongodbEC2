@@ -1,0 +1,34 @@
+rs.initiate()
+
+{% for host in groups['secondary'] %}
+rs.add("{{host}}")
+{% endfor %}
+
+printjson(rs.status())
+
+- name: Initialize the replica set
+  command: mongo ./replSetInit.js
+
+- name: Initialize the replica set
+  command: mongo ./replSetInit.js
+- name: Initialize the replica set
+  command: mongo ./replSetInit.js
+- name: Initialize the replica set
+  command: mongo ./replSetInit.js
+- name: Initialize the replica set
+  command: mongo ./replSetInit.js
+- name: Initialize the replica set
+  command: mongo ./replSetInit.js
+- name: Initialize the replica set
+  command: mongo ./replSetInit.js
+- name: Initialize the replica set
+  command: mongo ./replSetInit.js
+- name: Initialize the replica set
+  command: mongo ./replSetInit.js
+- name: Initialize the replica set
+  command: mongo ./replSetInit.js
+
+- name: Initialize the replica set
+  command: mongo ./replSetInit.js
+- name: Initialize the replica set
+  command: mongo ./replSetInit.js
